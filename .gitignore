@@ -1,0 +1,18 @@
+# Models (Huge files)
+*.gguf
+
+# Build artifacts
+build/
+bin/
+*.o
+*.a
+*.so
+
+# Data and Results
+*.json
+*.csv
+
+# System files
+.DS_Store
+
+llama.cpp/
