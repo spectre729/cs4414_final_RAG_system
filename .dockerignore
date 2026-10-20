@@ -1,0 +1,6 @@
+.git
+build
+*.gguf
+*.csv
+preprocessed_documents.json
+cs4414_final.md

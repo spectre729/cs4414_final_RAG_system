@@ -1,197 +1,82 @@
 cmake_minimum_required(VERSION 3.16)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
-project(llama_simple CXX)
+project(rag_system LANGUAGES CXX)
 
-# ---- C++ standard ----
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# ---- Where llama.cpp was installed ----
-# Change this if you installed elsewhere, or pass -DLLAMA_PREFIX=/path at configure time.
+# ---- Dependencies ----
+# llama.cpp is expected to be installed under LLAMA_PREFIX (headers in include/, libraries in lib/).
+# Override with -DLLAMA_PREFIX=/path/to/install at configure time.
 set(LLAMA_PREFIX "$ENV{HOME}/opt_dev" CACHE PATH "Install prefix of llama.cpp")
 list(APPEND CMAKE_PREFIX_PATH "${LLAMA_PREFIX}")
 
-set(LLAMA_INCLUDE_DIR "${LLAMA_PREFIX}/include")
-set(GGML_INCLUDE_DIR  "${LLAMA_PREFIX}/include/ggml")
-set(LLAMA_LIB_DIR     "${LLAMA_PREFIX}/lib")
+option(RAG_BUILD_TESTS "Build the smoke-test executables" ON)
 
-
-
-# ---- Target ----
-add_executable(data_preprocess data_preprocess.cpp)
-
-# add_executable(vector_db vector_db.cpp)
-
-#add_executable(test_encode encode.cpp test_encode.cpp)
-
-#add_executable(test_pipeline test_pipeline.cpp encode.cpp vector_db.cpp)
-
-#add_executable(test_llm test_llm.cpp llm_generation.cpp)
-
-add_executable(rag_system main.cpp encode.cpp vector_db.cpp llm_generation.cpp)
-
-
-target_include_directories(data_preprocess PRIVATE
-  "${LLAMA_INCLUDE_DIR}"
-  "${GGML_INCLUDE_DIR}"
-)
-
-#target_include_directories(vector_db PRIVATE
-#  "${LLAMA_INCLUDE_DIR}"
-#  "${GGML_INCLUDE_DIR}"
-
-#)
-
-#target_include_directories(test_encode PRIVATE
-#"${LLAMA_INCLUDE_DIR}"
-#  "${GGML_INCLUDE_DIR}"
-
-#)
-
-#target_include_directories(test_pipeline PRIVATE
-#"${LLAMA_INCLUDE_DIR}"
-#  "${GGML_INCLUDE_DIR}"
-
-#)
-
-#target_include_directories(test_llm PRIVATE
-#"${LLAMA_INCLUDE_DIR}"
-#  "${GGML_INCLUDE_DIR}"
-
-#)
-
-target_include_directories(rag_system PRIVATE
-"${LLAMA_INCLUDE_DIR}"
-  "${GGML_INCLUDE_DIR}"
-
-)
-
-
-# Prefer per-target link directories over global link_directories
-target_link_directories(data_preprocess PRIVATE "${LLAMA_LIB_DIR}")
-# target_link_directories(vector_db PRIVATE "${LLAMA_LIB_DIR}")
-
-#target_link_directories(test_encode PRIVATE "${LLAMA_LIB_DIR}")
-#target_link_directories(test_pipeline PRIVATE "${LLAMA_LIB_DIR}")
-#target_link_directories(test_llm PRIVATE "${LLAMA_LIB_DIR}")
-target_link_directories(rag_system PRIVATE "${LLAMA_LIB_DIR}")
-
-
-# Threads (pthread)
 find_package(Threads REQUIRED)
+find_package(nlohmann_json REQUIRED)
+find_package(BLAS REQUIRED)
+find_library(FAISS_LIBRARY faiss REQUIRED)
+find_path(FAISS_INCLUDE_DIR faiss/Index.h REQUIRED)
+find_package(OpenMP REQUIRED)  # FAISS is built with OpenMP
 
-# find_package(FAISS REQUIRED)
+# Shared setup applied to every executable below.
+function(rag_configure target)
+  target_include_directories(${target} PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${LLAMA_PREFIX}/include"
+    "${LLAMA_PREFIX}/include/ggml"
+  )
+  target_link_directories(${target} PRIVATE "${LLAMA_PREFIX}/lib")
+  target_link_libraries(${target} PRIVATE
+    llama ggml ggml-base ggml-cpu
+    nlohmann_json::nlohmann_json
+    Threads::Threads
+    ${CMAKE_DL_LIBS} m
+  )
+  # Lets the binary find libllama at runtime without LD_LIBRARY_PATH.
+  set_target_properties(${target} PROPERTIES
+    BUILD_RPATH   "${LLAMA_PREFIX}/lib"
+    INSTALL_RPATH "${LLAMA_PREFIX}/lib"
+  )
+endfunction()
 
-# Link the same libs as your working g++ command (CPU-only build of ggml)
-target_link_libraries(data_preprocess PRIVATE
-  llama
-  ggml
-  ggml-base
-  ggml-cpu
-  Threads::Threads
-  dl
-  m
-)
+# Targets that use the FAISS vector database. OpenMP must come after FAISS on the link line,
+# because a static libfaiss.a leaves its OpenMP symbols for the linker to resolve afterwards.
+function(rag_use_faiss target)
+  target_include_directories(${target} PRIVATE "${FAISS_INCLUDE_DIR}")
+  target_link_libraries(${target} PRIVATE "${FAISS_LIBRARY}" ${BLAS_LIBRARIES} OpenMP::OpenMP_CXX)
+endfunction()
 
-#target_link_libraries(vector_db PRIVATE
-#  llama
-#  ggml
-#  ggml-base
-#  ggml-cpu
-#  Threads::Threads
-#  faiss
-##  openblas
-#  dl
-#  m
-  
-  
-#)
+# ---- Libraries ----
+add_library(rag_encode STATIC src/encode.cpp)
+add_library(rag_llm    STATIC src/llm_generation.cpp)
+add_library(rag_db     STATIC src/vector_db.cpp)
+foreach(lib rag_encode rag_llm rag_db)
+  rag_configure(${lib})
+endforeach()
+rag_use_faiss(rag_db)
 
-#target_link_libraries(test_encode PRIVATE
-#  llama
-#  ggml
-#  ggml-base
-#  ggml-cpu
-#  Threads::Threads
-#  dl
-#  m
-#)
+# ---- Executables ----
+add_executable(data_preprocess src/data_preprocess.cpp)
+rag_configure(data_preprocess)
 
-#target_link_libraries(test_pipeline PRIVATE
-#  llama
-#  ggml
-#  ggml-base
-#  ggml-cpu
-#  Threads::Threads
-#  dl
-#  m 
-#  faiss
-#  openblas
-#  )
+add_executable(rag_system src/main.cpp)
+rag_configure(rag_system)
+rag_use_faiss(rag_system)
+target_link_libraries(rag_system PRIVATE rag_encode rag_llm rag_db)
 
+# ---- Smoke tests (need the model files and preprocessed documents to run) ----
+if(RAG_BUILD_TESTS)
+  add_executable(test_encode tests/test_encode.cpp)
+  rag_configure(test_encode)
+  target_link_libraries(test_encode PRIVATE rag_encode)
 
-##target_link_libraries(test_llm PRIVATE
- # llama
-#  ggml
-#  ggml-base
-#  ggml-cpu
-#  Threads::Threads
-#  dl
-#  m
-# )
+  add_executable(test_llm tests/test_llm.cpp)
+  rag_configure(test_llm)
+  target_link_libraries(test_llm PRIVATE rag_llm)
 
-target_link_libraries(rag_system PRIVATE
-  llama
-  ggml
-  ggml-base
-  ggml-cpu
-  Threads::Threads
-  dl
-  m
-  faiss
-  openblas
-
-)
-
-
-
-# Optional: add OpenMP if available (harmless if not found)
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-  target_link_libraries(data_preprocess PRIVATE OpenMP::OpenMP_CXX)
-  #target_link_libraries(test_encode PRIVATE OpenMP::OpenMP_CXX)
-  #target_link_libraries(test_pipeline PRIVATE OpenMP::OpenMP_CXX)
-  #target_link_libraries(test_llm PRIVATE OpenMP::OpenMP_CXX)
-  target_link_libraries(rag_system PRIVATE OpenMP::OpenMP_CXX)
-  #target_link_libraries(vector_db PRIVATE OpenMP::OpenMP_CXX)
+  add_executable(test_pipeline tests/test_pipeline.cpp)
+  rag_configure(test_pipeline)
+  rag_use_faiss(test_pipeline)
+  target_link_libraries(test_pipeline PRIVATE rag_encode rag_db)
 endif()
-
-# ---- RPATH so the binary runs without LD_LIBRARY_PATH ----
-set_target_properties(data_preprocess PROPERTIES
-  BUILD_RPATH   "${LLAMA_LIB_DIR}"
-  INSTALL_RPATH "${LLAMA_LIB_DIR}"
-)
-
-#set_target_properties(test_encode PROPERTIES
-#  BUILD_RPATH   "${LLAMA_LIB_DIR}"
-#  INSTALL_RPATH "${LLAMA_LIB_DIR}"
-#)
-#set_target_properties(test_pipeline PROPERTIES
-#  BUILD_RPATH   "${LLAMA_LIB_DIR}"
-#  INSTALL_RPATH "${LLAMA_LIB_DIR}"
-#)
-##set_target_properties(test_llm PROPERTIES
-#  BUILD_RPATH   "${LLAMA_LIB_DIR}"
-#  INSTALL_RPATH "${LLAMA_LIB_DIR}"
-#)
-set_target_properties(rag_system PROPERTIES
-  BUILD_RPATH   "${LLAMA_LIB_DIR}"
-  INSTALL_RPATH "${LLAMA_LIB_DIR}"
-)
-
-
-#set_target_properties(vector_db PROPERTIES
-#  BUILD_RPATH   "${LLAMA_LIB_DIR}"
-#  INSTALL_RPATH "${LLAMA_LIB_DIR}"
-#)
-

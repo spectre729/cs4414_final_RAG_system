@@ -12,7 +12,7 @@ int main() {
     VectorDatabase db(json_path);
 
     // 2. Define a query
-    std::string query = "What happens if I throw a brick at someone?";
+    std::string query = "How do I make flan?";
     std::cout << "\nQuery: " << query << std::endl;
 
     // 3. Encode

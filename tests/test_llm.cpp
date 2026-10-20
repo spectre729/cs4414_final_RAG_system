@@ -4,7 +4,7 @@
 int main() {
     try {
         std::string model_path = "tinyllama-1.1b-chat-v0.3.Q4_K_M.gguf";
-        LLMGenerator generator(model_path);
+        LLMGenerator generator(model_path, 2048);
         std::string prompt = "Question: What is the capital of France?\nAnswer:";
         std::string response = generator.generate(prompt);
 

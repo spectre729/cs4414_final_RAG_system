@@ -1,0 +1,14 @@
+[
+  {"id": 0, "text": "A quarterback is the player in American football who leads the offense. The quarterback calls plays, receives the snap from the center, and either throws the ball, hands it off, or runs with it."},
+  {"id": 1, "text": "The Philadelphia Eagles are a professional American football team based in Philadelphia, Pennsylvania. They play in the National Football League and won Super Bowl LII in 2018."},
+  {"id": 2, "text": "Photosynthesis is the process by which green plants convert sunlight, water and carbon dioxide into glucose and oxygen. It takes place mainly in the chloroplasts of leaf cells."},
+  {"id": 3, "text": "The capital of France is Paris, which sits on the river Seine. Paris is known for the Eiffel Tower, the Louvre museum and its cafe culture."},
+  {"id": 4, "text": "A binary search tree is a data structure in which each node has at most two children, and every node's left subtree holds smaller keys while its right subtree holds larger keys."},
+  {"id": 5, "text": "Water boils at 100 degrees Celsius (212 degrees Fahrenheit) at sea level. At higher altitudes the lower air pressure causes water to boil at a lower temperature."},
+  {"id": 6, "text": "The mitochondrion is an organelle found in most eukaryotic cells. It produces most of the cell's supply of ATP, which is used as a source of chemical energy."},
+  {"id": 7, "text": "Retrieval-augmented generation combines a retrieval system with a language model. Relevant documents are fetched for a question and supplied to the model as context so its answer is grounded in facts."},
+  {"id": 8, "text": "The Great Wall of China is a series of fortifications built across the historical northern borders of ancient Chinese states. Its construction spanned many centuries."},
+  {"id": 9, "text": "Throwing a brick at someone can cause serious injury and is a criminal offense in most jurisdictions. It may be charged as assault or assault with a deadly weapon."},
+  {"id": 10, "text": "TCP is a connection-oriented transport protocol that provides reliable, ordered delivery of bytes, while UDP is connectionless and does not guarantee delivery or ordering."},
+  {"id": 11, "text": "The Pacific Ocean is the largest and deepest of Earth's oceans. It extends from the Arctic in the north to the Southern Ocean in the south and covers about one third of the planet's surface."}
+]

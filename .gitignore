@@ -1,4 +1,4 @@
-# Models (Huge files)
+# Models (huge files)
 *.gguf
 
 # Build artifacts
@@ -8,9 +8,10 @@ bin/
 *.a
 *.so
 
-# Data and Results
+# Generated data and results (sample data under data/sample is kept)
 *.json
 *.csv
+!data/sample/*.json
 
 # System files
 .DS_Store

@@ -5,12 +5,16 @@
 #include <vector>
 #include "llama.h"
 
+// Converts text into a dense embedding using a BGE embedding model (GGUF) via llama.cpp.
 class QueryEncoder {
 public:
-    QueryEncoder(const std::string& model_path);
+    explicit QueryEncoder(const std::string& model_path);
     ~QueryEncoder();
 
-    // Encode a single query and return its embedding
+    QueryEncoder(const QueryEncoder&) = delete;
+    QueryEncoder& operator=(const QueryEncoder&) = delete;
+
+    // Encodes a single query and returns its embedding (768 floats for bge-base).
     std::vector<float> encode(const std::string& query);
 
 private:
@@ -20,6 +24,5 @@ private:
 
     std::vector<llama_token> tokenize(const std::string& text);
 };
-
 
 #endif // ENCODE_HPP
