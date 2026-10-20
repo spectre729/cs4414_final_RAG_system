@@ -2,9 +2,9 @@
 
 A local Retrieval-Augmented Generation (RAG) pipeline written in C++17. It embeds a document corpus, indexes it for fast similarity search, and answers questions by retrieving the most relevant passages and feeding them to a small local language model. Everything runs on CPU with no external services.
 
-Originally built as a course project for CS 4414 (Fall 2025).
+Originally built as a course project for CS 4414 (Fall 2025), this repository was cleaned up for public viewing. 
 
-**Status:** a working demo, not production software. The pipeline runs end to end and retrieval is sound, but answer quality is limited and several production concerns are unaddressed. See [Limitations](#limitations).
+**Status:** a working demo, not production software. The pipeline runs end to end and returns relevant passages on the sample queries, but answer quality is limited, and several production concerns are unaddressed. See [Limitations](#limitations).
 
 ## How it works
 
